@@ -1,35 +1,55 @@
+# -*- coding: utf-8 -*-
 import urllib2
-from HTMLParser import HTMLParser
-from urlparse import urlparse
 
-class LinkParser(HTMLParser):
-    links = set()
-    
-    def handle_starttag(self, tag, attributes):
-        if tag == 'a':
-            attributes_dict = dict(attributes)
-            if attributes_dict.get('href'):
-                self.links.add(attributes_dict['href'])
+def find_href(url):
+    links_arr = []
+    link = urllib2.urlopen(url).read()
+    links_available = 'true'
+    while links_available == 'true':
+        corpus = link.find("href")
+        if corpus >= 0:
+            link_len = len(link)
+            link = link[corpus:link_len]
+            corpus = link.find('"')
+            link_len = len(link)
+            link = link[corpus + 1:link_len]
+            corpus = link.find('"')
+            needle = link[0:corpus]
 
-        if tag == "img":
-            attributes_dict = dict(attributes)
-            if attributes_dict.get('src'):
-                self.links.add(attributes_dict['src'])
-
-def get_links(html, domain):
-    links = set()
-    parser = LinkParser()
-    parser.feed(html)
-
-    for links in parser.links:
-        url_parser = urlparse(links)
-        if links.startswith('/'):
-            links.add(url_parser.path)
+            if needle.startswith("http" or "www"):
+                links_arr.append(needle)
         else:
-            if url_parser.netloc == domain:
-                links.add(url_parser.path)
-    return links
+            links_available = 'false'
+    return links_arr
 
+def find_src(url):
+    links_arr = []
+    link = urllib2.urlopen(url).read()
+    links_available = 'true'
+    while links_available == 'true':
+        corpus = link.find("src")
+        if corpus >= 0:
+            link_len = len(link)
+            link = link[corpus:link_len]
+            corpus = link.find('"')
+            link_len = len(link)
+            link = link[corpus + 1:link_len]
+            corpus = link.find('"')
+            needle = link[0:corpus]
 
-    
+            if needle.startswith("/"):
+                needle = url + needle
+                links_arr.append(needle)
+        else:
+            links_available = 'false'
+    return links_arr
+            
+
+if __name__ == '__main__':
+    url = "http://gbvmexico.com"
+    links = find_href(url) + find_src(url)
+
+    for i in links:
+        print i
+
 
